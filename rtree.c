@@ -66,6 +66,14 @@ RTREE createNewRtree() {
     return myRtree;
 }
 
+ITEM createNewItem(int* data) {
+    ITEM myItem = (ITEM) malloc(sizeof(struct item));
+    for(int d = 0; d < DIMS; d++) {
+        myItem->data[d] = data[d];
+    }
+    return myItem;
+}
+
 // function to find the MBR for a given node
 // can be used in adjustTree function
 MBR findMBR(NODE node) {
@@ -95,8 +103,8 @@ MBR findMBR(NODE node) {
                 rect->topRight[d] = max(rect->topRight[d], item->data[d]);
             }
 
+            // for internal node
             else {
-                // for internal node
                 MBR childRect = node->rects[i];
                 rect->bottomLeft[d] = min(rect->bottomLeft[d], childRect->bottomLeft[d]);
                 rect->topRight[d] = max(rect->topRight[d], childRect->topRight[d]);
@@ -115,6 +123,18 @@ bool rectIntersects(MBR r1, MBR r2) {
     }
 
     return true;
+}
+
+
+// function to find area of given rectangle
+// will be used in chooseLeaf() function and nodeSplitting
+long long findRectArea(MBR rect) {
+    long long area = 1;
+    for(int d = 0; d < DIMS; d++) {
+        area *= (rect->topRight[d] - rect->bottomLeft[d]);
+    }
+
+    return area;
 }
 
 // finds MBR of 2 given rectangles
