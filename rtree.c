@@ -40,6 +40,31 @@ struct rtree {
 };
 
 
+NODE createNewNode(bool isLeaf) {
+    NODE myNode = (NODE) malloc(sizeof(struct node));
+    memset(node, 0, sizeof(node));
+    myNode->isLeaf = isLeaf;
+    return myNode;
+}
+
+RTREE createNewRtree() {
+    RTREE myRtree = (RTREE) malloc(sizeof(struct rtree));
+    memset(myRtree, 0, sizeof(myRtree));
+    return myRtree
+}
+
+// function to find the MBR for a given node
+MBR findMBR(NODE node) {
+    if(node->numChildren == 0) {
+        printf("Error: no children in given node!");
+    }
+
+    // for leaf node
+
+    // for internal node
+}
+
+
 int main() {
     printf("Hello world");
     return 0;
