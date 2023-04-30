@@ -53,6 +53,14 @@ struct rtree {
 };
 
 
+MBR createNewRect(int bottomLeft[DIMS], int topRight[DIMS]) {
+    MBR rect = (MBR) malloc(sizeof(struct mbr));
+    for(int d = 0; d < DIMS; d++) {
+        rect->bottomLeft[d] = bottomLeft[d];
+        rect->topRight[d] = topRight[d];
+    }
+}
+
 NODE createNewNode(bool isLeaf) {
     NODE myNode = (NODE) malloc(sizeof(struct node));
     memset(myNode, 0, sizeof(myNode));
@@ -125,6 +133,12 @@ bool rectIntersects(MBR r1, MBR r2) {
     return true;
 }
 
+// checks if an item(data object) is contained within a given rectangle
+bool rectContainsItem(MBR rect, ITEM item) {
+    MBR itemRect = createNewRect(item->data, item->data);
+    return rectIntersects(rect, itemRect);
+}
+
 
 // function to find area of given rectangle
 // will be used in chooseLeaf() function and nodeSplitting
@@ -137,6 +151,7 @@ long long findRectArea(MBR rect) {
     return area;
 }
 
+
 // finds MBR of 2 given rectangles
 MBR mergeRect(MBR r1, MBR r2) {
     MBR rect = (MBR) malloc(sizeof(struct mbr));
@@ -146,6 +161,30 @@ MBR mergeRect(MBR r1, MBR r2) {
     }
 
     return rect;
+}
+
+/*
+    traverses the rtree and inserts the data objects
+    intersecting with the query rectangle in the ans array
+*/
+void search(MBR qRect, NODE t, ITEM* ans, int *count) {
+    if(t->isLeaf) {
+        for(int i = 0; i < t->numChildren; i++) {
+            ITEM item = t->items[i];
+            if(rectContainsItem(qRect, item)) {
+                ans[(*count)++] = item;
+            }
+        }
+    }
+
+    else {
+        for(int i = 0; i < t->numChildren; i++) {
+            MBR childRect = t->rects[i];
+            if(rectIntersects(qRect, childRect)) {
+                search(qRect, t->children[i], ans, count);
+            }
+        }
+    }
 }
 
 
