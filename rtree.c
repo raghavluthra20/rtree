@@ -188,6 +188,65 @@ void search(MBR qRect, NODE t, ITEM* ans, int *count) {
 }
 
 
+// function to choose leaf for inserting a new element in the rtree
+NODE chooseLeaf(RTREE r, ITEM i) {
+    NODE n = r->root;
+    if (n->isLeaf == true) {
+        return n;
+    }
+    int reqIndex, emptyIndex;
+    int item[DIMS];
+    for (int d = 0; d < DIMS; d++) {
+        item[d] = i->data[d];
+    }
+    int minAreaIndex[M];
+    while (n->isLeaf == false) {
+        memset(minAreaIndex, 0, sizeof(minAreaIndex));
+        emptyIndex = 0;
+        int enlargement = INT_MAX;
+        for (int i = 0; i < n->numChildren; i++) {
+            // Calculating actual area of a particular mbr
+            long long area = findRectArea(n->rects[i]);
+
+            // Calculating area of enlarged mbr
+            MBR pointMBR = (MBR) malloc(sizeof(struct mbr));
+            
+            for (int d = 0; d < DIMS; d++) {
+                pointMBR->bottomLeft[d] = item[d];
+                pointMBR->topRight[d] = item[d];
+            }
+        
+            long long enlargedArea = findRectArea(mergeRect(n->rects[i], pointMBR));
+            if (enlargement == enlargedArea - area) {
+                minAreaIndex[emptyIndex] = i;
+                emptyIndex++;
+            }
+            else if (enlargement > enlargedArea - area) {
+                enlargement = enlargedArea - area;
+                memset(minAreaIndex, 0, sizeof(minAreaIndex));
+                minAreaIndex[0] = i;
+                emptyIndex = 1;
+            }
+        }
+        
+        // Index of children requiring least enlargement are stored in minAreaIndex array, now we need child with least
+        // area among these
+        int minArea = INT_MAX;
+        for (int i = 0; i < emptyIndex; i++) {
+            int area = 1;
+            for (int j = 0; j < DIMS; j++) {
+                area = area * (n->rects[i]->topRight[j] - n->rects[i]->bottomLeft[j]);
+            }
+            if (area < minArea) {
+                reqIndex = i;
+            }
+        }
+        n = n->children[reqIndex];
+    }
+    return n;
+}
+
+
 int main() {
     printf("Hello world\n");
 
