@@ -4,17 +4,17 @@ int area (int a1, int a2, int b1, int b2)
 	return abs((a1-a2)*(b1-b2));
 }
 
-bool isequal(item n1, item n2);
+bool isequal(ITEM n1, ITEM n2)
 {
 	int i;
 	for(i=0;i<DIMS;i++)
 	{
-		if(n1[i]!=n2[i])
+		if(n1->data[i] != n2->data[i])
 		{
-			return FALSE;
+			return false;
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 
@@ -23,27 +23,28 @@ int calc_redundancy(MBR m1, MBR m2)
 	return (findRectArea(mergeRect(m1, m2)) - (findRectArea(m2)+findRectArea(m2)));
 }
 
-void LeafQuadraticSplit(NODE n, item i)
+void LeafQuadraticSplit(NODE n, ITEM i)
 {
-	item seeds[M+1], picked_seeds[2];
-	int j;
-	NODE n1 = createNewNode(TRUE);
-	NODE n2 = createNewNode(TRUE);
+	ITEM seeds[M+1], picked_seeds[2];
+	int j, k;
+	NODE n1 = createNewNode(true);
+	NODE n2 = createNewNode(true);
 	
 	for( j =0;j<M;j++)
 	{
-		seeds[j] = n.items[j];
+		seeds[j] = n->items[j];
 	}
 	seeds[M] = i;
 	
-	picked_seeds = pickseeds_item(seeds);
+    ///////////////CHECK THIS PICKED_SEEDS/////////////
+	picked_seeds[1] = pickseeds_item(seeds);
 	
-	n1.parent = n.parent;
-	n2.parent = n.parent;
-	n1.items[0] = picked_seeds[0];
-	n2.items[0] = picked_seeds[1];
-	n1.numChildren++;
-	n2.numChildren++;
+	n1->parent = n->parent;
+	n2->parent = n->parent;
+	n1->items[0] = picked_seeds[0];
+	n2->items[0] = picked_seeds[1];
+	n1->numChildren++;
+	n2->numChildren++;
 	
 	int flag0=0, flag1=0;
 	int Updated_M;
@@ -59,7 +60,7 @@ void LeafQuadraticSplit(NODE n, item i)
 			}
 		}
 		else
-		if(flag1 == 0 && isequal(seeds[j],picked_seeds[1])
+		if(flag1 == 0 && isequal(seeds[j],picked_seeds[1]))
 		{
 			flag1 = 1;
 			Updated_M = M + 1 -(flag0+flag1);
@@ -72,7 +73,7 @@ void LeafQuadraticSplit(NODE n, item i)
 	
 	for(k=0;k<Updated_M;k++)
 	{
-		if(!picknext_item(n1,n2,seeds[k])
+		if(!picknext_item(n1,n2,seeds[k]))
 			printf("Split Problem: Unable to insert element into a new node");
 	}
 	
@@ -88,26 +89,26 @@ void InternalQuadraticSplit(NODE n, NODE i)
 {
 	NODE seeds[M+1], picked_seeds[2];
 	MBR seedsmbr[M+1];
-	int j;
+	int j,k;
 	int picked_seeds_indexes[2];
-	NODE n1 = createNewNode(TRUE);
-	NODE n2 = createNewNode(TRUE);
+	NODE n1 = createNewNode(true);
+	NODE n2 = createNewNode(true);
 	for( j =0;j<M;j++)
 	{
-		seeds[j] = n.children[j];
-		seedsmbr[j] = n.rects[j];
+		seeds[j] = n->children[j];
+		seedsmbr[j] = n->rects[j];
 	}
 	seeds[M] = i;
 	seedsmbr[M] = findMBR(i);
     
 	picked_seeds_indexes = pickseeds_node(seeds,seedsmbr);
 	
-	n1.parent = n.parent;
-	n2.parent = n.parent;
-	n1.children[0] = seeds[picked_seeds_indexes[0]];
-	n2.children[0] = seeds[picked_seeds_indexes[1]];
-	n1.numChildren++;
-	n2.numChildren++;
+	n1->parent = n->parent;
+	n2->parent = n->parent;
+	n1->children[0] = seeds[picked_seeds_indexes[0]];
+	n2->children[0] = seeds[picked_seeds_indexes[1]];
+	n1->numChildren++;
+	n2->numChildren++;
 	
 	int flag0=0, flag1=0;
 	int Updated_M;
@@ -136,7 +137,7 @@ void InternalQuadraticSplit(NODE n, NODE i)
 	
 	for(k=0;k<Updated_M;k++)
 	{
-		if(!picknext_child(n1,n2,seeds[k])
+		if(!picknext_child(n1,n2,seeds[k]))
 			printf("Split Problem: Unable to insert element into a new node");
 	}
 	
@@ -151,9 +152,9 @@ void InternalQuadraticSplit(NODE n, NODE i)
 
 
 
-item* pickseeds_item(item* seedlist)
+ITEM pickseeds_item(ITEM seedlist)
 {
-	item first[2];
+	ITEM first[2];
 	int i,j, max_area;
 	first[0] = seedlist[0];
 	first[1] = seedlist[1];
@@ -173,9 +174,9 @@ item* pickseeds_item(item* seedlist)
 	return first;
 }
 
-int* pickseeds_node(node* seedlist, mbr* seedmbr)
+int* pickseeds_node( NODE seedlist, MBR seedmbr)
 {
-	node first[2];
+	NODE first[2];
 	int indexes[2];
 	int i,j;
 	long long max_area;
@@ -188,7 +189,7 @@ int* pickseeds_node(node* seedlist, mbr* seedmbr)
 	{
 		for(j=i;j<M+1;j++)
 		{
-			if( findRectArea(mergeRect(seedmbr[i],seedmbr[j]) > max_area)
+			if( findRectArea(mergeRect(seedmbr[i],seedmbr[j]) > max_area))
 			{
 				first[0] = seedlist[i];
 				first[1] = seedlist[j];
@@ -202,18 +203,18 @@ int* pickseeds_node(node* seedlist, mbr* seedmbr)
 }
 
 
-int picknext_item( NODE *n1, NODE *n2, item i)
+int picknext_item( NODE n1, NODE n2, ITEM i)
 {
 	MBR mi = createNewRect(i,i);
 	MBR m1 = findMBR(n1);
 	MBR m2 = findMBR(n2);
-	if( findRectArea(mergeRect(m1, mi)) < findRectArea(mergeRect(m2,mi))
+	if( findRectArea(mergeRect(m1, mi)) < findRectArea(mergeRect(m2,mi)))
 	{
 		n1->items[n1->numChildren] = i;
 		n1->numChildren++;
 		return 1;
 	}
-	else if( findRectArea(mergeRect(m1, mi)) > findRectArea(mergeRect(m2,mi))
+	else if( findRectArea(mergeRect(m1, mi)) > findRectArea(mergeRect(m2,mi)))
 	{
 		n2->items[n2->numChildren] = i;
 		n2->numChildren++;
@@ -234,7 +235,7 @@ int picknext_item( NODE *n1, NODE *n2, item i)
 	return 0;
 }
 
-int picknext_child( NODE *n1, NODE *n2, NODE *ni)
+int picknext_child( NODE n1, NODE n2, NODE ni)
 {
 	MBR mi = findMBR(ni);
 	MBR m1 = findMBR(n1);
@@ -267,6 +268,12 @@ int picknext_child( NODE *n1, NODE *n2, NODE *ni)
 }
 
 
+RTREE adjustLeaf(RTREE r, NODE L)
+{
+    NODE n = L;
+    while(n->parent != NULL)
+    {
+        NODE p = n->parent;
 
-
-
+    }
+}
