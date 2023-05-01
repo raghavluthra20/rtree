@@ -247,8 +247,125 @@ NODE chooseLeaf(RTREE r, ITEM i) {
 }
 
 
+void printItem(ITEM item) {
+    printf("Item: Data Stored - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", item->data[d]);
+    }
+    printf(")");
+}
+
+void printMBR(MBR rect) {
+    printf("MBR: Top Right - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", rect->topRight[d]);
+    }
+    printf("),   ");
+
+    printf("Bottom Left - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", rect->bottomLeft[d]);
+    }
+    printf(")");
+}
+
+// prints all items stored in the leaf node
+void printLeafNode(NODE node) {
+    if(!node->isLeaf) {
+        printf("Error: trying to print items of LEAF node!");
+        return;
+    }
+
+    if(node->numChildren == 0) {
+        printf("Empty leaf node.\n");
+        return;
+    }
+
+    printf("Leaf node with %d items: \n", (node->numChildren));
+    for(int i = 0; i < node->numChildren; i++) {
+        printItem(node->items[i]);
+        printf("\n");
+    }
+}
+
+// prints the MBR of the leaf node
+void printInternalNode(NODE node) {
+    if(node->isLeaf) {
+        printf("Error: trying to print children of INTERNAL node!");
+        return;
+    }
+
+    if(node->numChildren == 0) {
+        printf("Empty internal node.\n");
+        return;
+    }
+    printf("Internal node with %d children, ", node->numChildren);
+    printMBR(findMBR(node));
+    printf("\n");
+}
+
+void printNode(NODE node) {
+    if(node->isLeaf) {
+        printLeafNode(node);
+    }
+
+    else {
+        printInternalNode(node);
+    }
+}
+
+
+void traverse(NODE root) {
+    if(root == NULL) return;
+
+    // print root
+    printNode(root);
+
+    // print children
+    for(int i = 0; i < root->numChildren; i++) {
+        traverse(root->children[i]);
+    }
+}
+
 int main() {
     printf("Hello world\n");
+    int data1[2] = {1, 3};
+    int data2[2] = {2, 2};
+    int data3[2] = {6, 1};
+    int data4[2] = {4, 5};
+    int data5[2] = {2, 4};
+    int data6[2] = {7, 5};
+    int data7[2] = {2, 9};
+    int data8[2] = {1, 7};
+
+    ITEM item1 = createNewItem(data1);
+    ITEM item2 = createNewItem(data2);
+    ITEM item3 = createNewItem(data3);
+    ITEM item4 = createNewItem(data4);
+    ITEM item5 = createNewItem(data5);
+    ITEM item6 = createNewItem(data6);
+    ITEM item7 = createNewItem(data7);
+    ITEM item8 = createNewItem(data8);
+
+
+    NODE myNode1 = createNewNode(true);
+    NODE myNode2 = createNewNode(false);
+    NODE node1 = createNewNode(true);
+    NODE node2 = createNewNode(true);
+    NODE node3 = createNewNode(true);
+
+    myNode1->items[0] = item1;
+    myNode1->items[1] = item2;
+    myNode1->items[2] = item3;
+    myNode1->numChildren = 3;
+
+    myNode2->children[0] = node1;
+    myNode2->children[1] = node2;
+    myNode2->children[2] = node3;
+    myNode2->numChildren = 3;
+
+    printNode(myNode1);
+    printMBR(findMBR(myNode1));
 
     return 0;
 }
