@@ -116,6 +116,20 @@ MBR mergeRect(MBR r1, MBR r2)
     return rect;
 }
 
+void printMBR(MBR rect) {
+    printf("MBR: Top Right - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", rect->topRight[d]);
+    }
+    printf("),   ");
+
+    printf("Bottom Left - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", rect->bottomLeft[d]);
+    }
+    printf(")");
+}
+
 // function to find the MBR for a given node
 // can be used in adjustTree function
 MBR findMBR(NODE node)
@@ -195,9 +209,18 @@ bool isequal(ITEM n1, ITEM n2)
     return true;
 }
 
-int calc_redundancy(MBR m1, MBR m2)
+long long calc_redundancy(MBR m1, MBR m2)
 {
-    return (findRectArea(mergeRect(m1, m2)) - (findRectArea(m2) + findRectArea(m2)));
+    printf("printing m1 and m2");
+    printMBR(m1);
+    printf("\n");
+    printMBR(m2);
+    printf("\n");
+    long long red = (findRectArea(mergeRect(m1, m2)) - (findRectArea(m1) + findRectArea(m2)));
+    if(red < 0) red = 0;
+    printf("red=%d", red);
+    printf("\n");
+    return red;
 }
 
 void pickseeds_item(ITEM seedlist[], ITEM first[])
@@ -223,6 +246,10 @@ void pickseeds_item(ITEM seedlist[], ITEM first[])
 
 void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
 {
+    int listSize = sizeof(seedlist)/sizeof(seedlist[0]);
+    if(listSize != M+1) {
+        printf("ERROR from pickseeds_node(): listSize not equal to M+1\n");
+    }
     NODE first[2];
     // int indexes[2];
     int i, j;
@@ -232,21 +259,28 @@ void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
     indexes[0] = 0;
     indexes[1] = 1;
     max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
-    for (i = 0; i < M + 1; i++)
+    printf("max_red = %d\n", calc_redundancy);
+
+    for (i = 0; i < listSize; i++)
     {
-        for (j = i; j < M + 1; j++)
+        for (j = i; j < listSize; j++)
         {
+            printf("calc_red(%d, %d) = %d\n", i, j, calc_redundancy);
             if (calc_redundancy(seedmbr[i], seedmbr[j]) > max_redundancy)
             {
+                printf("max_red updated(%d, %d) = %d\n", i, j, calc_redundancy);
                 first[0] = seedlist[i];
                 first[1] = seedlist[j];
                 indexes[0] = i;
                 indexes[1] = j;
-                max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
-                ;
+                max_redundancy = calc_redundancy(seedmbr[i], seedmbr[j]);
             }
         }
     }
+
+    printf("indexes value: %d, %d\n", indexes[0], indexes[1]);
+    printMBR(seedmbr[indexes[0]]);
+    printMBR(seedmbr[indexes[1]]);
 }
 
 int picknext_item(NODE n1, NODE n2, ITEM i)
@@ -736,9 +770,181 @@ void insert(RTREE r, ITEM i)
 }
 
 
+void printItem(ITEM item) {
+    printf("Item: Data Stored - (");
+    for(int d = 0; d < DIMS; d++) {
+        printf("%d, ", item->data[d]);
+    }
+    printf(")");
+}
+
+
+
+// prints all items stored in the leaf node
+void printLeafNode(NODE node) {
+    if(node->isLeaf == false) {
+        // printf("Error: trying to print items of INTERNAL node!");
+        printf("Error from printLeafNode(): this is a leaf node!\n");
+        return;
+    }
+
+    if(node->numChildren == 0) {
+        printf("Empty leaf node.\n");
+        return;
+    }
+
+    printf("Leaf node with %d items: \n", (node->numChildren));
+    for(int i = 0; i < node->numChildren; i++) {
+        printItem(node->items[i]);
+        printf("\n");
+    }
+}
+
+// prints the MBR of the leaf node
+void printInternalNode(NODE node) {
+    if(node->isLeaf) {
+        printf("Error from printInternalNode(): trying to print children of LEAF node!\n");
+        return;
+    }
+
+    if(node->numChildren == 0) {
+        printf("Empty internal node.\n");
+        return;
+    }
+    printf("Internal node with %d children, ", node->numChildren);
+    printMBR(findMBR(node));
+    printf("\n");
+}
+
+void printNode(NODE node) {
+    if(node->isLeaf) {
+        printLeafNode(node);
+    }
+
+    else {
+        printInternalNode(node);
+    }
+}
+
+
+void traverse(NODE root) {
+    if(root == NULL) return;
+
+    // print root
+    printNode(root);
+
+    // leaf nodes dont have children so return
+    if(root->isLeaf) return;
+
+    // print children
+    for(int i = 0; i < root->numChildren; i++) {
+        traverse(root->children[i]);
+    }
+}
+
 int main()
 {
     printf("Hello world\n");
 
+    int data1[2] = {1, 1};
+    int data2[2] = {2, 2};
+    int data3[2] = {3, 3};
+    int data4[2] = {4, 4};
+    int data5[2] = {5, 5};
+    int data6[2] = {6, 6};
+    int data7[2] = {7, 7};
+    int data8[2] = {8, 8};
+    int data9[2] = {9, 9};
+    
+
+    ITEM item1 = createNewItem(data1);
+    ITEM item2 = createNewItem(data2);
+    ITEM item3 = createNewItem(data3);
+    ITEM item4 = createNewItem(data4);
+    ITEM item5 = createNewItem(data5);
+    ITEM item6 = createNewItem(data6);
+    ITEM item7 = createNewItem(data7);
+    ITEM item8 = createNewItem(data8);
+    ITEM item9 = createNewItem(data9);
+
+
+    NODE node1 = createNewNode(true);
+    NODE node2 = createNewNode(true);
+    NODE node3 = createNewNode(true);
+
+    node1->numChildren = 3;
+    node1->items[0] = item1;
+    node1->items[1] = item2;
+    node1->items[2] = item3;
+    node1->rects[0] = createNewRect(item1->data, item1->data);
+    node1->rects[1] = createNewRect(item2->data, item2->data);
+    node1->rects[2] = createNewRect(item3->data, item3->data);
+
+    node2->numChildren = 3;
+    node2->items[0] = item4;
+    node2->items[1] = item5;
+    node2->items[2] = item6;
+    node2->rects[0] = createNewRect(item4->data, item4->data);
+    node2->rects[1] = createNewRect(item5->data, item5->data);
+    node2->rects[2] = createNewRect(item6->data, item6->data);
+
+    node3->numChildren = 2;
+    node3->items[0] = item7;
+    node3->items[1] = item8;
+    node3->rects[0] = createNewRect(item7->data, item7->data);
+    node3->rects[1] = createNewRect(item8->data, item8->data);
+    
+
+
+    NODE node4 = createNewNode(false);
+    node4->numChildren = 3;
+    node4->children[0] = node1;
+    node4->children[1] = node2;
+    node4->children[2] = node3;
+    node4->rects[0] = createNewRect(item1->data, item3->data);
+    node4->rects[1] = createNewRect(item4->data, item6->data);
+    node4->rects[2] = createNewRect(item7->data, item8->data);
+
+    RTREE r = createNewRtree();
+    r->root = node4;
+    r->count = 8;
+    r->rect = findMBR(node4);
+
+    // // testing pickseeds_item
+    // ITEM seedList[5] = {item1, item2, item3, item4, item5};
+    // ITEM first[2];
+    // pickseeds_item(seedList, first);
+    // for(int i = 0; i < 2; i++) {
+    //     printItem(first[i]);
+    // }
+
+
+    // testing picknext_item
+    picknext_item(node1, node2, item9);
+    printNode(node1);
+    printNode(node2);
+
+    // testing pickseeds_node
+    int p1[2] = {0, 0};
+    int p2[2] = {1, 2};
+    int p3[2] = {2, 2};
+    int p4[2] = {4, 0};
+    int p5[2] = {5, 0};
+    int p6[2] = {6, 2};
+
+    MBR r1 = createNewRect(p1, p3);
+    MBR r2 = createNewRect(p4, p6);
+    MBR r3 = createNewRect(p1, p2);
+    MBR r4 = createNewRect(p5, p6);
+
+    NODE n1 = createNewNode(false);
+    NODE n2 = createNewNode(false);
+    NODE n3 = createNewNode(false);
+    NODE n4 = createNewNode(false);
+
+    NODE seedList[4] = {n1, n2, n3, n4};
+    MBR mbrList[4] = {r1, r2, r3, r4};
+    int index[2];
+    pickseeds_node(seedList, mbrList, index);
     return 0;
 }
