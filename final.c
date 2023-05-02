@@ -242,7 +242,7 @@ void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
                 first[1] = seedlist[j];
                 indexes[0] = i;
                 indexes[1] = j;
-                max_redundancy = calc_redundancy(seedmbr[i], seedmbr[j]);
+                max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
                 ;
             }
         }
@@ -439,6 +439,51 @@ void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n
             printf("Split Problem: Unable to insert element into a new node");
     }
 
+    if(n1->numChildren < m && n1->numChildren < m)
+    {
+        printf("Something's Wrong");
+    }
+    else if (n1->numChildren<m) //will not work for m>2 -> in that case you have to make a m-n1->numCildren size Array
+    {
+        int index;
+        long long minarea = findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[0]->data ,n2->items[0]->data )));
+        for(k=0;k<M;k++)
+        {
+            if(findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[k]->data ,n2->items[k]->data ))) < minarea)
+            {
+                minarea = findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[k]->data ,n2->items[k]->data )));
+                index = k;
+            }
+        }
+        n1->items[1] = n2->items[index];
+        for(int l = index ; l<M-1 ;l++)
+        {
+            n2->items[l] = n2->items[l+1];
+        }
+        n1->numChildren++;
+        n2->numChildren--;
+    }
+    else if (n2->numChildren<m)
+    {
+        int index;
+        long long minarea = findRectArea(mergeRect(createNewRect(n2->items[0]->data ,n2->items[0]->data ),createNewRect(n1->items[0]->data ,n1->items[0]->data )));
+        for(k=0;k<M;k++)
+        {
+            if(findRectArea(mergeRect(createNewRect(n2->items[0]->data,n2->items[0]->data ),createNewRect(n1->items[k]->data ,n1->items[k]->data )))<minarea)
+            {
+                minarea = findRectArea(mergeRect(createNewRect(n2->items[0]->data ,n2->items[0]->data ),createNewRect(n1->items[k]->data ,n1->items[k]->data )));
+                index = k;
+            }
+        }
+        n2->items[1] = n1->items[index];
+        for(int l = index; l<M-1 ; l++)
+        {
+            n1->items[l] = n1->items[l+1];
+        }
+        n2->numChildren++;
+        n1->numChildren--;
+    }
+
     // adjustments in parent OR return the 2 nodes
 
     // destroy node n
@@ -501,6 +546,50 @@ void InternalQuadraticSplit(NODE n, NODE i, NODE n1, NODE n2)
             printf("Split Problem: Unable to insert element into a new node");
     }
 
+    if(n1->numChildren<m && n1->numChildren<m)
+    {
+        printf("Something's Wrong");
+    }
+    else if (n1->numChildren<m) //will not work for m>2 -> in that case you have to make a m-n1->numCildren size Array
+    {
+        int index;
+        long long minred = calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[0]));
+        for(k=0;k<M;k++)
+        {
+            if(calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[k]))<minred)
+            {
+                minred = calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[k]));
+                index = k;
+            }
+        }
+        n1->children[1] = n2->children[index];
+        for(int l = index ; l<M-1 ; l++)
+        {
+            n2->children[l] = n2->children[l+1];
+        }
+        n1->numChildren++;
+        n2->numChildren--;
+    }
+    else if (n2->numChildren<m)
+    {
+        int index;
+        long long minred = calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[0])); 
+        for(k=0;k<M;k++)
+        {
+            if(calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[k]))<minred)
+            {
+                minred = calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[k]));
+                index = k;
+            }
+        }
+        n2->children[1] = n1->children[index];
+        for(int l = index; l<M-1; l++)
+        {
+            n1->children[l] = n1->children[l+1];
+        }
+        n2->numChildren++;
+        n1->numChildren--;
+    }
     // adjustments in parent OR return the 2 nodes
 
     // destroy node n
