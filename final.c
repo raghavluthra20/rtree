@@ -649,9 +649,12 @@ void InternalQuadraticSplit(NODE n, NODE i, NODE n1, NODE n2)
     // printf("here4, \n Updated_M = %d\n",Updated_M);
     for (k = 0; k < Updated_M; k++)
     {
+<<<<<<< HEAD
         // findMBR()
         // printNode(n1);
         // printf("here4.5");
+=======
+>>>>>>> 6510cb1 (Fix QuadraticInternalSplit().)
         if (!picknext_child(n1, n2, seeds[k])) {
             printf("Split Problem: Unable to insert element into a new node");
         }
@@ -705,7 +708,10 @@ void InternalQuadraticSplit(NODE n, NODE i, NODE n1, NODE n2)
     // adjustments in parent OR return the 2 nodes
 
     // destroy node n
+<<<<<<< HEAD
 //    printf("here5");
+=======
+>>>>>>> 6510cb1 (Fix QuadraticInternalSplit().)
 
 }
 
@@ -975,8 +981,11 @@ int main()
     NODE N1 = createNewNode(false);
     NODE N2 = createNewNode(false);
 
+<<<<<<< HEAD
     // printf("yo\n");
     // printMBR(findMBR(node5));
+=======
+>>>>>>> 6510cb1 (Fix QuadraticInternalSplit().)
     InternalQuadraticSplit(node5, node6, N1, N2);
     printNode(N1);
     printNode(N2);
