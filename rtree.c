@@ -344,6 +344,136 @@ void traverse(NODE root) {
     }
 }
 
+
+
+int area(int a1, int a2, int b1, int b2)
+{
+    return abs((a1 - a2) * (b1 - b2));
+}
+
+bool isequal(ITEM n1, ITEM n2)
+{
+    int i;
+    for (i = 0; i < DIMS; i++)
+    {
+        if (n1->data[i] != n2->data[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+long long calc_redundancy(MBR m1, MBR m2)
+{
+    // printf("printing m1 and m2");
+    // printMBR(m1);
+    // printf("\n");
+    // printMBR(m2);
+    // printf("\n");
+    long long red = (findRectArea(mergeRect(m1, m2)) - (findRectArea(m1) + findRectArea(m2)));
+    if(red < 0) red = 0;
+    printf("red=%d", red);
+    printf("\n");
+    return red;
+}
+
+void pickseeds_item(ITEM seedlist[], ITEM first[])
+{
+
+    int i, j, max_area;
+    first[0] = seedlist[0];
+    first[1] = seedlist[1];
+    max_area = area(first[0]->data[0], first[1]->data[0], first[0]->data[1], first[1]->data[1]);
+    for (i = 0; i < M + 1; i++)
+    {
+        for (j = i; j < M + 1; j++)
+        {
+            if (area(seedlist[i]->data[0], seedlist[j]->data[0], seedlist[i]->data[1], seedlist[j]->data[1]) > max_area)
+            {
+                first[0] = seedlist[i];
+                first[1] = seedlist[j];
+                max_area = area(first[0]->data[0], first[1]->data[0], first[0]->data[1], first[1]->data[1]);
+            }
+        }
+    }
+}
+
+void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
+{
+    // int listSize = sizeof(seedlist)/sizeof(seedlist[0]);
+    // if(listSize != M+1) {
+    //     printf("ERROR from pickseeds_node(): listSize not equal to M+1\n");
+    //     return;
+    // }
+    // printf("list size: %d", listSize);
+    NODE first[2];
+    // int indexes[2];
+    int i, j;
+    long long max_redundancy;
+    first[0] = seedlist[0];
+    first[1] = seedlist[1];
+    indexes[0] = 0;
+    indexes[1] = 1;
+    max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
+    printf("max_red = %d\n", max_redundancy);
+
+    for (i = 0; i < M + 1; i++)
+    {
+        for (j = i; j < M + 1; j++)
+        {
+            printf("calc_red(%d, %d) = %d\n", i, j, calc_redundancy(seedmbr[i], seedmbr[j]));
+            if (calc_redundancy(seedmbr[i], seedmbr[j]) > max_redundancy)
+            {
+                first[0] = seedlist[i];
+                first[1] = seedlist[j];
+                indexes[0] = i;
+                indexes[1] = j;
+                max_redundancy = calc_redundancy(seedmbr[i], seedmbr[j]);
+                printf("max_red updated(%d, %d) = %d\n", i, j, max_redundancy);
+            }
+        }
+    }
+
+    printf("indexes value: %d, %d\n", indexes[0], indexes[1]);
+    printMBR(seedmbr[indexes[0]]);
+    printMBR(seedmbr[indexes[1]]);
+}
+
+int picknext_item(NODE n1, NODE n2, ITEM i)
+{
+    MBR mi = createNewRect(i->data, i->data);
+    MBR m1 = findMBR(n1);
+    MBR m2 = findMBR(n2);
+    if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) < (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
+    {
+        n1->items[n1->numChildren] = i;
+        n1->numChildren++;
+        return 1;
+    }
+    else if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) > (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
+    {
+        n2->items[n2->numChildren] = i;
+        n2->numChildren++;
+        return 1;
+    }
+    else if (n1->numChildren > n2->numChildren)
+    {
+        n2->items[n2->numChildren] = i;
+        n2->numChildren++;
+        return 1;
+    }
+    else
+    {
+        n1->items[n1->numChildren] = i;
+        n1->numChildren++;
+        return 1;
+    }
+    return 0;
+}
+
+
+
 int main() {
     printf("Hello world\n");
 
