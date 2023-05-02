@@ -10,6 +10,8 @@
 #define INT_MAX 9999999
 #define INT_MIN -9999999
 
+
+
 int min(int a, int b) {
     return a < b ? a : b;
 }
@@ -184,6 +186,7 @@ void printLeafNode(NODE node) {
 void printInternalNode(NODE node) {
     if(node->isLeaf) {
         printf("Error from printInternalNode(): trying to print children of LEAF node!\n");
+        printLeafNode(node);
         return;
     }
 
@@ -342,24 +345,28 @@ int picknext_item(NODE n1, NODE n2, ITEM i)
     if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) < (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
     {
         n1->items[n1->numChildren] = i;
+        n1->rects[n1->numChildren] = createNewRect(i->data,i->data);
         n1->numChildren++;
         return 1;
     }
     else if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) > (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
     {
         n2->items[n2->numChildren] = i;
+        n2->rects[n2->numChildren] = createNewRect(i->data,i->data);
         n2->numChildren++;
         return 1;
     }
     else if (n1->numChildren > n2->numChildren)
     {
         n2->items[n2->numChildren] = i;
+        n2->rects[n2->numChildren] = createNewRect(i->data,i->data);
         n2->numChildren++;
         return 1;
     }
     else
     {
         n1->items[n1->numChildren] = i;
+        n1->rects[n1->numChildren] = createNewRect(i->data,i->data);
         n1->numChildren++;
         return 1;
     }
@@ -502,7 +509,9 @@ void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n
     n1->parent = n->parent;
     n2->parent = n->parent;
     n1->items[0] = picked_seeds[0];
+    n1->rects[0] = createNewRect(n1->items[0]->data,n1->items[0]->data);
     n2->items[0] = picked_seeds[1];
+    n2->rects[0] = createNewRect(n2->items[0]->data,n2->items[0]->data);
     n1->numChildren++;
     n2->numChildren++;
 
@@ -754,11 +763,24 @@ void split(NODE n, NODE L, NODE LL, ITEM i)
 
 void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
 {
+    if(L->parent == NULL && LL != NULL)
+    {   
+        NODE root = createNewNode(false);
+        root->children[0] = L;
+        root->children[1] = LL;
+        root->rects[0] = findMBR(L);
+        root->rects[1] = findMBR(LL);
+        root->numChildren = 2;
+        r->root = root;
+        L->parent = root;
+        LL->parent = root;
+        return ;
+    }
     NODE p = L->parent;
     MBR mr = findMBR(L);
     MBR parent_mbr = findMBR(p);
-    // printNode(L);
-    // printNode(p);
+   // printNode(L);
+   // printNode(p);
     // printMBR(mx);
     if (LL == NULL) // node has not been splitted
     {
@@ -768,7 +790,8 @@ void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
            // printMBR(p->rects[i]);
             if (compareMBR(p->rects[i], mx))
             {
-                p->rects[i] = mr;
+                p->rects[i] = mr;  
+                p->children[i] = L;
                 break;
             }
         }
@@ -812,25 +835,13 @@ void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
             
         }
     }
-    if(L->parent == NULL && LL != NULL)
-    {   
-        printf("here\n");
-        NODE root = createNewNode(false);
-        root->children[0] = L;
-        root->children[1] = LL;
-        printf("hell\n");
-        root->rects[0] = findMBR(L);
-        root->rects[1] = findMBR(LL);
-        root->numChildren = 2;
-        r->root = root;
-        L->parent = root;
-        LL->parent = root;
-    }
+    
 }
 
 
 void insert(RTREE r, ITEM i)
 {
+
     if(r->count == 0) {
         NODE newNode = createNewNode(true);
         r->root = newNode;
@@ -853,13 +864,13 @@ void insert(RTREE r, ITEM i)
 
     NODE n = chooseLeaf(r, i);
     MBR mx = findMBR(n);
-    printf("Before split\n");
+    // printf("Before split\n");
     split(n, L, LL, i);
-    printf("After split\n");
-    printNode(L);
-    printNode(LL);
+    // printf("After split\n");
+    // printNode(L);
+    // printNode(LL);
     adjustTree(r, L, LL, mx);
-
+    r->count++;
 }
 
 
@@ -882,13 +893,13 @@ int main(int argc, char *argv[])
 {
     printf("Hello world\n");
 
-    int data1[2] = {1, 1};
-    int data2[2] = {2, 2};
-    int data3[2] = {3, 3};
-    int data4[2] = {4, 4};
-    int data5[2] = {5, 5};
-    int data6[2] = {6, 6};
-    int data7[2] = {7, 7};
+    int data1[2] = {1, 9};
+    int data2[2] = {2, 20};
+    int data3[2] = {2, 19};
+    int data4[2] = {3, 20};
+    int data5[2] = {2, 10};
+    int data6[2] = {8, 5};
+    int data7[2] = {4, 5};
     int data8[2] = {8, 8};
     int data9[2] = {9, 9};
     
@@ -1013,13 +1024,14 @@ int main(int argc, char *argv[])
     node5->rects[1] = createNewRect(item9->data, item9->data);
 
     RTREE r2 = createNewRtree();
-   // adjustTree(r, node1, node5, mbrold);
-    insert(r2, item1);
-    insert(r2, item2);
-    insert(r2, item3);
-    insert(r2, item4);
-    insert(r2, item5);
-    printNode(r2->root);
+    // adjustTree(r, node1, node5, mbrold);
+    // insert(r2, item1);
+    // insert(r2, item2);
+    // insert(r2, item3);
+    // insert(r2, item4);
+    // insert(r2, item5);
+    // // insert(r2, item6);
+    // traverse(r2->root);
 
 
 
@@ -1028,25 +1040,28 @@ int main(int argc, char *argv[])
 
 
 
-    // // read data from file
-    // FILE *fp;
-    // int num1, num2;
+    // read data from file
+    FILE *fp;
+    int num1, num2;
 
-    // fp = fopen(argv[1], "r");
+    fp = fopen(argv[1], "r");
 
-    // if (fp == NULL) {
-    //     printf("Error opening file.\n");
-    //     return 1;
-    // }
+    if (fp == NULL) {
+        printf("Error opening file.\n");
+        return 1;
+    }
 
-    // RTREE rt = createNewRtree();
-    // while (fscanf(fp, "%d %d", &num1, &num2) != EOF) {
-    //     int d[2] = {num1, num2};
-    //     ITEM newItem = createNewItem(d);
-    //     insert(rt, newItem);
-    // }
+    RTREE rt = createNewRtree();
+    while (fscanf(fp, "%d %d", &num1, &num2) != EOF) {
+        int d[2] = {num1, num2};
+        ITEM newItem = createNewItem(d);
+        printItem(newItem);
+        insert(rt, newItem);
+    }
 
-    // fclose(fp);
+    fclose(fp);
 
+    traverse(rt->root);
 
+    return 0;
 }
