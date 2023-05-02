@@ -59,14 +59,16 @@ MBR createNewRect(int bottomLeft[DIMS], int topRight[DIMS]) {
         rect->bottomLeft[d] = bottomLeft[d];
         rect->topRight[d] = topRight[d];
     }
+    return rect;
 }
 
 NODE createNewNode(bool isLeaf) {
     NODE myNode = (NODE) malloc(sizeof(struct node));
-    memset(myNode, 0, sizeof(myNode));
+    memset(myNode, 0, sizeof(struct node));
     myNode->isLeaf = isLeaf;
     return myNode;
 }
+
 
 RTREE createNewRtree() {
     RTREE myRtree = (RTREE) malloc(sizeof(struct rtree));
@@ -472,6 +474,107 @@ int picknext_item(NODE n1, NODE n2, ITEM i)
     return 0;
 }
 
+void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n1 and LL as n2 //////////////////
+{
+    ITEM seeds[M + 1], picked_seeds[2];
+    int j, k;
+    // NODE n1 = createNewNode(true);
+    // NODE n2 = createNewNode(true);
+
+    for (j = 0; j < M; j++)
+    {
+        seeds[j] = n->items[j];
+    }
+    seeds[M] = i;
+
+    pickseeds_item(seeds, picked_seeds);
+
+    n1->parent = n->parent;
+    n2->parent = n->parent;
+    n1->items[0] = picked_seeds[0];
+    n2->items[0] = picked_seeds[1];
+    n1->numChildren++;
+    n2->numChildren++;
+
+    int flag0 = 0, flag1 = 0;
+    int Updated_M = M;
+    for (j = 0; j <= M; j++)
+    {
+        if (flag0 == 0 && isequal(seeds[j], picked_seeds[0]))
+        {
+            flag0 = 1;
+            Updated_M = M + 1 - (flag0 + flag1);
+            for (k = j; k < Updated_M; k++)
+            {
+                seeds[k] = seeds[k + 1];
+            }
+        }
+        else if (flag1 == 0 && isequal(seeds[j], picked_seeds[1]))
+        {
+            flag1 = 1;
+            Updated_M = M + 1 - (flag0 + flag1);
+            for (k = j; k < Updated_M; k++)
+            {
+                seeds[k] = seeds[k + 1];
+            }
+        }
+    }
+
+    for (k = 0; k < Updated_M; k++)
+    {
+        if (!picknext_item(n1, n2, seeds[k]))
+            printf("Split Problem: Unable to insert element into a new node");
+    }
+
+    if(n1->numChildren < m && n1->numChildren < m)
+    {
+        printf("Something's Wrong");
+    }
+    else if (n1->numChildren<m) //will not work for m>2 -> in that case you have to make a m-n1->numCildren size Array
+    {
+        int index;
+        long long minarea = findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[0]->data ,n2->items[0]->data )));
+        for(k=0;k<M;k++)
+        {
+            if(findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[k]->data ,n2->items[k]->data ))) < minarea)
+            {
+                minarea = findRectArea(mergeRect(createNewRect(n1->items[0]->data ,n1->items[0]->data ),createNewRect(n2->items[k]->data ,n2->items[k]->data )));
+                index = k;
+            }
+        }
+        n1->items[1] = n2->items[index];
+        for(int l = index ; l<M-1 ;l++)
+        {
+            n2->items[l] = n2->items[l+1];
+        }
+        n1->numChildren++;
+        n2->numChildren--;
+    }
+    else if (n2->numChildren<m)
+    {
+        int index;
+        long long minarea = findRectArea(mergeRect(createNewRect(n2->items[0]->data ,n2->items[0]->data ),createNewRect(n1->items[0]->data ,n1->items[0]->data )));
+        for(k=0;k<M;k++)
+        {
+            if(findRectArea(mergeRect(createNewRect(n2->items[0]->data,n2->items[0]->data ),createNewRect(n1->items[k]->data ,n1->items[k]->data )))<minarea)
+            {
+                minarea = findRectArea(mergeRect(createNewRect(n2->items[0]->data ,n2->items[0]->data ),createNewRect(n1->items[k]->data ,n1->items[k]->data )));
+                index = k;
+            }
+        }
+        n2->items[1] = n1->items[index];
+        for(int l = index; l<M-1 ; l++)
+        {
+            n1->items[l] = n1->items[l+1];
+        }
+        n2->numChildren++;
+        n1->numChildren--;
+    }
+
+    // adjustments in parent OR return the 2 nodes
+
+    // destroy node n
+}
 
 
 int main() {
@@ -539,32 +642,17 @@ int main() {
     r->count = 8;
     r->rect = findMBR(node4);
 
-    // traverse check
-    // traverse(node4);
-    printf("\n");
 
-    // search check
-    ITEM ans[10];
-    int cnt = 0;
 
-    int bl[2] = {4, 4};
-    int tr[2] = {4, 4};
-    MBR q = createNewRect(bl, tr);
-
-    search(q, node4, ans, &cnt);
-    // printf("count = %d\n", cnt);
-
-    // for(int i = 0; i < cnt; i++) {
-    //     printItem(ans[i]);
-    //     printf("\n");
-    // }
-
-    // chooseLeaf check
-    int data9[2] = {5, 6};
-    ITEM item9 = createNewItem(data9);
-    NODE l = chooseLeaf(r, item9);
-    printf("checking chooseLeaf: \n");
-    printNode(l);
+    // testing leafQuadSplit()
+    node1->numChildren++;
+    node1->items[3] = item4;
+    node1->rects[3] = createNewRect(item4->data, item4->data);
+    NODE N1 = createNewNode(true);
+    NODE N2 = createNewNode(true);
+    LeafQuadraticSplit(node1, item5, N1, N2);
+    printNode(N1);
+    printNode(N2);
 
     return 0;
 }
