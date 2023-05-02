@@ -271,8 +271,9 @@ void printMBR(MBR rect) {
 
 // prints all items stored in the leaf node
 void printLeafNode(NODE node) {
-    if(!node->isLeaf) {
-        printf("Error: trying to print items of LEAF node!");
+    if(node->isLeaf == false) {
+        // printf("Error: trying to print items of INTERNAL node!");
+        printf("Error from printLeafNode(): this is a leaf node!\n");
         return;
     }
 
@@ -291,7 +292,7 @@ void printLeafNode(NODE node) {
 // prints the MBR of the leaf node
 void printInternalNode(NODE node) {
     if(node->isLeaf) {
-        printf("Error: trying to print children of INTERNAL node!");
+        printf("Error from printInternalNode(): trying to print children of LEAF node!\n");
         return;
     }
 
@@ -321,6 +322,9 @@ void traverse(NODE root) {
     // print root
     printNode(root);
 
+    // leaf nodes dont have children so return
+    if(root->isLeaf) return;
+
     // print children
     for(int i = 0; i < root->numChildren; i++) {
         traverse(root->children[i]);
@@ -329,14 +333,16 @@ void traverse(NODE root) {
 
 int main() {
     printf("Hello world\n");
-    int data1[2] = {1, 3};
+
+    int data1[2] = {1, 1};
     int data2[2] = {2, 2};
-    int data3[2] = {6, 1};
-    int data4[2] = {4, 5};
-    int data5[2] = {2, 4};
-    int data6[2] = {7, 5};
-    int data7[2] = {2, 9};
-    int data8[2] = {1, 7};
+    int data3[2] = {3, 3};
+    int data4[2] = {4, 4};
+    int data5[2] = {5, 5};
+    int data6[2] = {6, 6};
+    int data7[2] = {7, 7};
+    int data8[2] = {8, 8};
+    int data9[2] = {7, 8};
 
     ITEM item1 = createNewItem(data1);
     ITEM item2 = createNewItem(data2);
@@ -346,26 +352,75 @@ int main() {
     ITEM item6 = createNewItem(data6);
     ITEM item7 = createNewItem(data7);
     ITEM item8 = createNewItem(data8);
+    ITEM item9 = createNewItem(data9);
 
 
-    NODE myNode1 = createNewNode(true);
-    NODE myNode2 = createNewNode(false);
     NODE node1 = createNewNode(true);
     NODE node2 = createNewNode(true);
     NODE node3 = createNewNode(true);
 
-    myNode1->items[0] = item1;
-    myNode1->items[1] = item2;
-    myNode1->items[2] = item3;
-    myNode1->numChildren = 3;
+    node1->numChildren = 3;
+    node1->items[0] = item1;
+    node1->items[1] = item2;
+    node1->items[2] = item3;
+    node1->rects[0] = createNewRect(item1->data, item1->data);
+    node1->rects[1] = createNewRect(item2->data, item2->data);
+    node1->rects[2] = createNewRect(item3->data, item3->data);
 
-    myNode2->children[0] = node1;
-    myNode2->children[1] = node2;
-    myNode2->children[2] = node3;
-    myNode2->numChildren = 3;
+    node2->numChildren = 3;
+    node2->items[0] = item4;
+    node2->items[1] = item5;
+    node2->items[2] = item6;
+    node2->rects[0] = createNewRect(item4->data, item4->data);
+    node2->rects[1] = createNewRect(item5->data, item5->data);
+    node2->rects[2] = createNewRect(item6->data, item6->data);
 
-    printNode(myNode1);
-    printMBR(findMBR(myNode1));
+    node3->numChildren = 2;
+    node3->items[0] = item7;
+    node3->items[1] = item8;
+    node3->rects[0] = createNewRect(item7->data, item7->data);
+    node3->rects[1] = createNewRect(item8->data, item8->data);
+    
+
+
+    NODE node4 = createNewNode(false);
+    node4->numChildren = 3;
+    node4->children[0] = node1;
+    node4->children[1] = node2;
+    node4->children[2] = node3;
+    node4->rects[0] = createNewRect(item1->data, item3->data);
+    node4->rects[1] = createNewRect(item4->data, item6->data);
+    node4->rects[2] = createNewRect(item7->data, item8->data);
+
+    RTREE r = createNewRtree();
+    r->root = node4;
+    r->count = 8;
+    r->rect = findMBR(node4);
+
+    // traverse check
+    // traverse(node4);
+    printf("\n");
+
+    // search check
+    ITEM ans[10];
+    int cnt = 0;
+
+    int bl[2] = {4, 4};
+    int tr[2] = {4, 4};
+    MBR q = createNewRect(bl, tr);
+
+    search(q, node4, ans, &cnt);
+    // printf("count = %d\n", cnt);
+
+    // for(int i = 0; i < cnt; i++) {
+    //     printItem(ans[i]);
+    //     printf("\n");
+    // }
+
+    // chooseLeaf check
+    NODE l = chooseLeaf(r, item9);
+    printf("checking chooseLeaf: \n");
+    printNode(l);
 
     return 0;
 }
