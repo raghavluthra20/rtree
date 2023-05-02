@@ -242,7 +242,7 @@ void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
                 first[1] = seedlist[j];
                 indexes[0] = i;
                 indexes[1] = j;
-                max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
+                max_redundancy = calc_redundancy(seedmbr[i], seedmbr[j]);
                 ;
             }
         }
