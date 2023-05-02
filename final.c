@@ -211,11 +211,11 @@ bool isequal(ITEM n1, ITEM n2)
 
 long long calc_redundancy(MBR m1, MBR m2)
 {
-    printf("printing m1 and m2");
-    printMBR(m1);
-    printf("\n");
-    printMBR(m2);
-    printf("\n");
+    // printf("printing m1 and m2");
+    // printMBR(m1);
+    // printf("\n");
+    // printMBR(m2);
+    // printf("\n");
     long long red = (findRectArea(mergeRect(m1, m2)) - (findRectArea(m1) + findRectArea(m2)));
     if(red < 0) red = 0;
     printf("red=%d", red);
@@ -246,10 +246,12 @@ void pickseeds_item(ITEM seedlist[], ITEM first[])
 
 void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
 {
-    int listSize = sizeof(seedlist)/sizeof(seedlist[0]);
-    if(listSize != M+1) {
-        printf("ERROR from pickseeds_node(): listSize not equal to M+1\n");
-    }
+    // int listSize = sizeof(seedlist)/sizeof(seedlist[0]);
+    // if(listSize != M+1) {
+    //     printf("ERROR from pickseeds_node(): listSize not equal to M+1\n");
+    //     return;
+    // }
+    // printf("list size: %d", listSize);
     NODE first[2];
     // int indexes[2];
     int i, j;
@@ -259,21 +261,21 @@ void pickseeds_node(NODE seedlist[], MBR seedmbr[], int indexes[])
     indexes[0] = 0;
     indexes[1] = 1;
     max_redundancy = calc_redundancy(seedmbr[0], seedmbr[1]);
-    printf("max_red = %d\n", calc_redundancy);
+    printf("max_red = %d\n", max_redundancy);
 
-    for (i = 0; i < listSize; i++)
+    for (i = 0; i < M + 1; i++)
     {
-        for (j = i; j < listSize; j++)
+        for (j = i; j < M + 1; j++)
         {
-            printf("calc_red(%d, %d) = %d\n", i, j, calc_redundancy);
+            printf("calc_red(%d, %d) = %d\n", i, j, calc_redundancy(seedmbr[i], seedmbr[j]));
             if (calc_redundancy(seedmbr[i], seedmbr[j]) > max_redundancy)
             {
-                printf("max_red updated(%d, %d) = %d\n", i, j, calc_redundancy);
                 first[0] = seedlist[i];
                 first[1] = seedlist[j];
                 indexes[0] = i;
                 indexes[1] = j;
                 max_redundancy = calc_redundancy(seedmbr[i], seedmbr[j]);
+                printf("max_red updated(%d, %d) = %d\n", i, j, max_redundancy);
             }
         }
     }
