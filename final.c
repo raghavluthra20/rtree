@@ -3,60 +3,65 @@
 #include <stdbool.h>
 #include <string.h>
 
+
 #define DIMS 2
 #define M 4
 #define m 2
 #define INT_MAX 9999999
 #define INT_MIN -9999999
 
-int min(int a, int b)
-{
+int min(int a, int b) {
     return a < b ? a : b;
 }
 
-int max(int a, int b)
-{
+int max(int a, int b) {
     return a > b ? a : b;
 }
 
-typedef struct mbr *MBR;
-struct mbr
-{
+typedef struct mbr* MBR;
+struct mbr {
     int bottomLeft[DIMS];
     int topRight[DIMS];
 };
 
-typedef struct item *ITEM;
-struct item
-{
+typedef struct item* ITEM;
+struct item {
     int data[DIMS];
 };
 
-typedef struct node *NODE;
-struct node
-{
+typedef struct node* NODE;
+struct node {
     bool isLeaf;
     NODE parent;
 
     // for leaf nodes this represents number of items
     // for internal nodes this represents number of children
     int numChildren;
+
     MBR rects[M]; // MBRs for all children/items
     NODE children[M];
     ITEM items[M];
 };
 
-typedef struct rtree *RTREE;
-struct rtree
-{
+typedef struct rtree* RTREE;
+struct rtree {
     int count; // total number of items (data objects)
     NODE root;
     MBR rect;
 };
 
-NODE createNewNode(bool isLeaf)
-{
-    NODE myNode = (NODE)malloc(sizeof(struct node));
+MBR createNewRect(int bottomLeft[DIMS], int topRight[DIMS]) {
+    MBR rect = (MBR) malloc(sizeof(struct mbr));
+    for(int d = 0; d < DIMS; d++) {
+        rect->bottomLeft[d] = bottomLeft[d];
+        rect->topRight[d] = topRight[d];
+    }
+    return rect;
+}
+
+
+NODE createNewNode(bool isLeaf) {
+    NODE myNode = (NODE) malloc(sizeof(struct node));
     memset(myNode, 0, sizeof(struct node));
     myNode->isLeaf = isLeaf;
     return myNode;
@@ -77,17 +82,6 @@ ITEM createNewItem(int *data)
         myItem->data[d] = data[d];
     }
     return myItem;
-}
-
-MBR createNewRect(int bottomLeft[DIMS], int topRight[DIMS])
-{
-    MBR rect = (MBR)malloc(sizeof(struct mbr));
-    for (int d = 0; d < DIMS; d++)
-    {
-        rect->bottomLeft[d] = bottomLeft[d];
-        rect->topRight[d] = topRight[d];
-    }
-    return rect;
 }
 
 // function to find area of given rectangle
@@ -947,6 +941,18 @@ int main()
     NODE seedList[4] = {n1, n2, n3, n4};
     MBR mbrList[4] = {r1, r2, r3, r4};
     int index[2];
-    pickseeds_node(seedList, mbrList, index);
+    // pickseeds_node(seedList, mbrList, index);
+
+    // testing leafQuadSplit()
+    node1->numChildren++;
+    node1->items[3] = item4;
+    node1->rects[3] = createNewRect(item4->data, item4->data);
+    NODE N1 = createNewNode(true);
+    NODE N2 = createNewNode(true);
+    LeafQuadraticSplit(node1, item5, N1, N2);
+    printNode(N1);
+    printNode(N2);
+
+
     return 0;
 }
