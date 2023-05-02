@@ -173,6 +173,15 @@ MBR findMBR(NODE node)
     return rect;
 }
 
+bool compareMBR(MBR r1, MBR r2) {
+    for (int i = 0; i < DIMS; i++) {
+        if (r1->bottomLeft[i] != r2->bottomLeft[i] || r1->topRight[i] != r2->topRight[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // checks if two rectangles intersect or not
 bool rectIntersects(MBR r1, MBR r2)
 {
@@ -415,7 +424,6 @@ NODE chooseLeaf(RTREE r, ITEM x)
     return n;
 }
 
-/////// TO CHECK FOR 4-1 SPLIT IN THE NODE ///////////////////////////////////////////////
 
 void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n1 and LL as n2 //////////////////
 {
@@ -664,108 +672,6 @@ void split(NODE n, NODE L, NODE LL, ITEM i)
     }
 }
 
-void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
-{
-    NODE p = L->parent;
-    // int req_ind =0;
-    MBR mr = findMBR(L);
-    MBR parent_mbr = findMBR(p);
-    if (LL == NULL) // node has not been splitted
-    {
-        
-        for (int i = 0; i < M; i++)
-        {
-            if (p->rects[i] == mx)
-            {
-                p->rects[i] = mr;
-                break;
-            }
-        }
-        memset(L, 0, sizeof(struct node)); 
-        memset(LL, 0, sizeof(struct node));
-        split(p,L,LL, NULL );
-        adjustTree(r, L , LL, parent_mbr);
-    }
-    else     // Case for node splitting in L and LL.
-    {
-        MBR mrb = findMBR(LL);
-        for (int i = 0; i < M; i++) // updating the MBR for the L node 
-        {
-            if (p->rects[i] == mx)
-            {
-                p->rects[i] = mr;
-                break;
-            }
-        }  
-        if(p->numChildren < M) // adding mbr for LL node if vacancy is available 
-        {
-            MBR par_mbr = findMBR(p);
-            p->rects[p->numChildren] = mrb;
-            p->numChildren++;
-            adjustTree(r, p, NULL, par_mbr);
-        }
-        else // adding mbr for LL node if vacancy is NOT available 
-        {
-            NODE j = createNewNode(true);
-            j->rects[0] = mrb;
-            j->children[0] = LL;
-            j->numChildren++;
-            j->parent = p->parent;
-            memset(L, 0, sizeof(struct node)); 
-            memset(LL, 0, sizeof(struct node));
-            
-            MBR mq = findMBR(p);
-            InternalQuadraticSplit(p, j, L, LL);
-            adjustTree(r, L, LL, mq);
-            
-        }
-    }
-    if(p->parent == NULL && LL != NULL)
-    {   
-        NODE root = createNewNode(false);
-        root->children[0] = L;
-        root->children[1] = LL;
-        root->rects[0] = findMBR(L);
-        root->rects[1] = findMBR(LL);
-        root->numChildren = 2;
-        r->root = root;
-        L->parent = root;
-        LL->parent = root;
-    }
-}
-
-// RTREE adjustNode(RTREE r, NODE L, NODE LL)
-// {
-//     NODE n = L;
-//     while (n->parent != NULL)
-//     {
-//         NODE p = n->parent;
-//     }
-
-//     return r;
-// }
-
-// void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
-// {
-//     if (L->isLeaf)
-//         adjustLeaf(r, L, LL, mx);
-//     else
-//         adjustNode(r, L, LL);
-// }
-
-void insert(RTREE r, ITEM i)
-{
-    NODE L = createNewNode(true);
-    NODE LL = createNewNode(true);
-
-    NODE n = chooseLeaf(r, i);
-    MBR mx = findMBR(n);
-    split(n, L, LL, i);
-    adjustTree(r, L, LL, mx);
-
-}
-
-
 void printItem(ITEM item) {
     printf("Item: Data Stored - (");
     for(int d = 0; d < DIMS; d++) {
@@ -773,8 +679,6 @@ void printItem(ITEM item) {
     }
     printf(")");
 }
-
-
 
 // prints all items stored in the leaf node
 void printLeafNode(NODE node) {
@@ -821,6 +725,94 @@ void printNode(NODE node) {
         printInternalNode(node);
     }
 }
+
+void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
+{
+    NODE p = L->parent;
+    MBR mr = findMBR(L);
+    MBR parent_mbr = findMBR(p);
+    // printNode(L);
+    // printNode(p);
+    // printMBR(mx);
+    if (LL == NULL) // node has not been splitted
+    {
+        
+        for (int i = 0; i < p->numChildren; i++)
+        {
+           // printMBR(p->rects[i]);
+            if (compareMBR(p->rects[i], mx))
+            {
+                p->rects[i] = mr;
+                break;
+            }
+        }
+        memset(L, 0, sizeof(struct node)); 
+        memset(LL, 0, sizeof(struct node));
+        split(p,L,LL, NULL );
+        adjustTree(r, L , LL, parent_mbr);
+    }
+    else     // Case for node splitting in L and LL.
+    {
+        MBR mrb = findMBR(LL);
+        for (int i = 0; i < M; i++) // updating the MBR for the L node 
+        {
+            if (compareMBR(p->rects[i], mx))
+            {
+                p->rects[i] = mr;
+                break;
+            }
+        }  
+        if(p->numChildren < M) // adding mbr for LL node if vacancy is available 
+        {
+            MBR par_mbr = findMBR(p);
+            p->rects[p->numChildren] = mrb;
+            p->numChildren++;
+            printNode(p);
+            adjustTree(r, p, NULL, par_mbr);
+        }
+        else // adding mbr for LL node if vacancy is NOT available 
+        {
+            NODE j = createNewNode(true);
+            j->rects[0] = mrb;
+            j->children[0] = LL;
+            j->numChildren++;
+            j->parent = p->parent;
+            memset(L, 0, sizeof(struct node)); 
+            memset(LL, 0, sizeof(struct node));
+            
+            MBR mq = findMBR(p);
+            InternalQuadraticSplit(p, j, L, LL);
+            adjustTree(r, L, LL, mq);
+            
+        }
+    }
+    if(p->parent == NULL && LL != NULL)
+    {   
+        NODE root = createNewNode(false);
+        root->children[0] = L;
+        root->children[1] = LL;
+        root->rects[0] = findMBR(L);
+        root->rects[1] = findMBR(LL);
+        root->numChildren = 2;
+        r->root = root;
+        L->parent = root;
+        LL->parent = root;
+    }
+}
+
+
+void insert(RTREE r, ITEM i)
+{
+    NODE L = createNewNode(true);
+    NODE LL = createNewNode(true);
+
+    NODE n = chooseLeaf(r, i);
+    MBR mx = findMBR(n);
+    split(n, L, LL, i);
+    adjustTree(r, L, LL, mx);
+
+}
+
 
 
 void traverse(NODE root) {
@@ -901,6 +893,10 @@ int main()
     node4->rects[1] = createNewRect(item4->data, item6->data);
     node4->rects[2] = createNewRect(item7->data, item8->data);
 
+    node1->parent = node4;
+    node2->parent = node4;
+    node3->parent = node4;
+
     RTREE r = createNewRtree();
     r->root = node4;
     r->count = 8;
@@ -915,43 +911,60 @@ int main()
     // }
 
 
-    // testing picknext_item
-    picknext_item(node1, node2, item9);
-    printNode(node1);
-    printNode(node2);
+    // // testing picknext_item
+    // picknext_item(node1, node2, item9);
+    // printNode(node1);
+    // printNode(node2);
 
     // testing pickseeds_node
-    int p1[2] = {0, 0};
-    int p2[2] = {1, 2};
-    int p3[2] = {2, 2};
-    int p4[2] = {4, 0};
-    int p5[2] = {5, 0};
-    int p6[2] = {6, 2};
+    // int p1[2] = {0, 0};
+    // int p2[2] = {1, 2};
+    // int p3[2] = {2, 2};
+    // int p4[2] = {4, 0};
+    // int p5[2] = {5, 0};
+    // int p6[2] = {6, 2};
 
-    MBR r1 = createNewRect(p1, p3);
-    MBR r2 = createNewRect(p4, p6);
-    MBR r3 = createNewRect(p1, p2);
-    MBR r4 = createNewRect(p5, p6);
+    // MBR r1 = createNewRect(p1, p3);
+    // MBR r2 = createNewRect(p4, p6);
+    // MBR r3 = createNewRect(p1, p2);
+    // MBR r4 = createNewRect(p5, p6);
 
-    NODE n1 = createNewNode(false);
-    NODE n2 = createNewNode(false);
-    NODE n3 = createNewNode(false);
-    NODE n4 = createNewNode(false);
+    // NODE n1 = createNewNode(false);
+    // NODE n2 = createNewNode(false);
+    // NODE n3 = createNewNode(false);
+    // NODE n4 = createNewNode(false);
 
-    NODE seedList[4] = {n1, n2, n3, n4};
-    MBR mbrList[4] = {r1, r2, r3, r4};
-    int index[2];
-    // pickseeds_node(seedList, mbrList, index);
+    // NODE seedList[4] = {n1, n2, n3, n4};
+    // MBR mbrList[4] = {r1, r2, r3, r4};
+    // int index[2];
+    // // pickseeds_node(seedList, mbrList, index);
 
-    // testing leafQuadSplit()
-    node1->numChildren++;
-    node1->items[3] = item4;
-    node1->rects[3] = createNewRect(item4->data, item4->data);
-    NODE N1 = createNewNode(true);
-    NODE N2 = createNewNode(true);
-    LeafQuadraticSplit(node1, item5, N1, N2);
-    printNode(N1);
-    printNode(N2);
+    // // testing leafQuadSplit()
+    // node1->numChildren++;
+    // node1->items[3] = item4;
+    // node1->rects[3] = createNewRect(item4->data, item4->data);
+    // NODE N1 = createNewNode(true);
+    // NODE N2 = createNewNode(true);
+    // LeafQuadraticSplit(node1, item5, N1, N2);
+    // printNode(N1);
+    // printNode(N2);
+
+    
+    MBR mbrold = findMBR(node1);
+    // node1->numChildren++;
+    // node1->items[3] = item9;
+    // node1->rects[3] = createNewRect(item9->data, item9->data);
+    // printf("Node before sending:\n");
+    // printNode(node1);
+    
+    NODE node5 = createNewNode(true);
+    node5->numChildren = 2;
+    node5->items[0] = item3;
+    node5->items[1] = item9;
+    node5->rects[0] = createNewRect(item3->data, item3->data);
+    node5->rects[1] = createNewRect(item9->data, item9->data);
+    adjustTree(r, node1, node5, mbrold);
+    
 
 
     return 0;
