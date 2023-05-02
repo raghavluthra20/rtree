@@ -474,6 +474,45 @@ int picknext_item(NODE n1, NODE n2, ITEM i)
     return 0;
 }
 
+int picknext_child(NODE n1, NODE n2, NODE ni)
+{
+    MBR mi = findMBR(ni);
+    MBR m1 = findMBR(n1);
+    MBR m2 = findMBR(n2);
+    printf("RectArea m1 = %d", findRectArea(m1));
+    printf("RectArea m2 = %d", findRectArea(m2));
+
+    if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) < (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
+    {
+        n1->children[n1->numChildren] = ni;
+        n1->numChildren++;
+        printf("inserted to n1 \n");
+        return 1;
+    }
+    else if ((findRectArea(mergeRect(m1, mi)) - findRectArea(m1)) > (findRectArea(mergeRect(m2, mi)) - findRectArea(m2)))
+    {
+        n2->children[n2->numChildren] = ni;
+        n2->numChildren++;
+        printf("inserted to n2 \n");
+        return 1;
+    }
+    else if (n1->numChildren > n2->numChildren)
+    {
+        n2->children[n2->numChildren] = ni;
+        n2->numChildren++;
+        printf("inserted to n2(equality case) \n");
+        return 1;
+    }
+    else
+    {
+        n1->children[n1->numChildren] = ni;
+        n1->numChildren++;
+        printf("inserted to n1(equality case) \n");
+        return 1;
+    }
+    return 0;
+}
+
 void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n1 and LL as n2 //////////////////
 {
     ITEM seeds[M + 1], picked_seeds[2];
@@ -576,8 +615,245 @@ void LeafQuadraticSplit(NODE n, ITEM i, NODE n1, NODE n2) ///////// TAKEN L as n
     // destroy node n
 }
 
+void InternalQuadraticSplit(NODE n, NODE i, NODE n1, NODE n2)
+{
+    NODE seeds[M + 1], picked_seeds[2];
+    MBR seedsmbr[M + 1];
+    int j, k;
+    int picked_seeds_indexes[2];
+    //NODE n1 = createNewNode(true);
+    //NODE n2 = createNewNode(true);
+    for (j = 0; j < M; j++)
+    {
+        seeds[j] = n->children[j];
+        seedsmbr[j] = n->rects[j];
+    }
+    seeds[M] = i;
+    seedsmbr[M] = findMBR(i);
 
-int main() {
+    // picked_seeds_indexes = pickseeds_node(seeds,seedsmbr);
+
+    printf("here");
+    pickseeds_node(seeds, seedsmbr, picked_seeds_indexes);
+    printf("here2");
+
+    n1->parent = n->parent;
+    n2->parent = n->parent;
+    n1->children[0] = seeds[picked_seeds_indexes[0]];
+    n2->children[0] = seeds[picked_seeds_indexes[1]];
+    n1->numChildren++;
+    n2->numChildren++;
+
+    printf("here3");
+
+    int flag0 = 0, flag1 = 0;
+    int Updated_M;
+    for (j = 0; j <= M; j++)
+    {
+        if (flag0 == 0 && j == picked_seeds_indexes[0])
+        {
+            flag0 = 1;
+            Updated_M = M + 1 - (flag0 + flag1);
+            for (k = j; k < Updated_M; k++)
+            {
+                seeds[k] = seeds[k + 1];
+            }
+        }
+        else if (flag1 == 0 && j == picked_seeds_indexes[1])
+        {
+            flag1 = 1;
+            Updated_M = M + 1 - (flag0 + flag1);
+            for (k = j; k < Updated_M; k++)
+            {
+                seeds[k] = seeds[k + 1];
+            }
+        }
+    }
+
+    printf("here4");
+    for (k = 0; k < Updated_M; k++)
+    {
+        printNode(n1);
+        if (!picknext_child(n1, n2, seeds[k])) {
+            printf("Split Problem: Unable to insert element into a new node");
+        }
+    }
+    printf("here5");
+
+    if(n1->numChildren<m && n1->numChildren<m)
+    {
+        printf("Something's Wrong");
+    }
+    else if (n1->numChildren<m) //will not work for m>2 -> in that case you have to make a m-n1->numCildren size Array
+    {
+        int index;
+        long long minred = calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[0]));
+        for(k=0;k<M;k++)
+        {
+            if(calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[k]))<minred)
+            {
+                minred = calc_redundancy(findMBR(n1->children[0]),findMBR(n2->children[k]));
+                index = k;
+            }
+        }
+        n1->children[1] = n2->children[index];
+        for(int l = index ; l<M-1 ; l++)
+        {
+            n2->children[l] = n2->children[l+1];
+        }
+        n1->numChildren++;
+        n2->numChildren--;
+    }
+    else if (n2->numChildren<m)
+    {
+        int index;
+        long long minred = calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[0])); 
+        for(k=0;k<M;k++)
+        {
+            if(calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[k]))<minred)
+            {
+                minred = calc_redundancy(findMBR(n2->children[0]),findMBR(n1->children[k]));
+                index = k;
+            }
+        }
+        n2->children[1] = n1->children[index];
+        for(int l = index; l<M-1; l++)
+        {
+            n1->children[l] = n1->children[l+1];
+        }
+        n2->numChildren++;
+        n1->numChildren--;
+    }
+    // adjustments in parent OR return the 2 nodes
+
+    // destroy node n
+    printf("here5");
+
+}
+
+void split(NODE n, NODE L, NODE LL, ITEM i)
+{
+    int q = n->numChildren;
+    if (q < M)
+    {
+        for (int d = 0; d < q; d++)
+        {
+            if (L->isLeaf)
+            {
+                L->items[d] = n->items[d];
+            }
+            else
+                L->children[d] = n->children[d];
+
+            L->numChildren++;
+        }
+        if (L->isLeaf)
+        {
+            L->items[q] = i;
+        }
+        else
+            L->children[q] = LL; ///CHECK//
+
+        L->numChildren++;
+        return;
+    }
+    else if (q == M)
+    {
+        if (n->isLeaf)
+        {
+            LeafQuadraticSplit(n, i, L, LL);
+        }
+        else
+        {
+            InternalQuadraticSplit(n, LL, L, LL);
+        }
+    }
+}
+
+void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
+{
+    NODE p = L->parent;
+    // int req_ind =0;
+    MBR mr = findMBR(L);
+    MBR parent_mbr = findMBR(p);
+    if (LL == NULL) // node has not been splitted
+    {
+        
+        for (int i = 0; i < M; i++)
+        {
+            if (p->rects[i] == mx)
+            {
+                p->rects[i] = mr;
+                break;
+            }
+        }
+        memset(L, 0, sizeof(struct node)); 
+        memset(LL, 0, sizeof(struct node));
+        split(p,L,LL, NULL );
+        adjustTree(r, L , LL, parent_mbr);
+    }
+    else     // Case for node splitting in L and LL.
+    {
+        MBR mrb = findMBR(LL);
+        for (int i = 0; i < M; i++) // updating the MBR for the L node 
+        {
+            if (p->rects[i] == mx)
+            {
+                p->rects[i] = mr;
+                break;
+            }
+        }  
+        if(p->numChildren < M) // adding mbr for LL node if vacancy is available 
+        {
+            MBR par_mbr = findMBR(p);
+            p->rects[p->numChildren] = mrb;
+            p->numChildren++;
+            adjustTree(r, p, NULL, par_mbr);
+        }
+        else // adding mbr for LL node if vacancy is NOT available 
+        {
+            NODE j = createNewNode(true);
+            j->rects[0] = mrb;
+            j->children[0] = LL;
+            j->numChildren++;
+            j->parent = p->parent;
+            memset(L, 0, sizeof(struct node)); 
+            memset(LL, 0, sizeof(struct node));
+            
+            MBR mq = findMBR(p);
+            InternalQuadraticSplit(p, j, L, LL);
+            adjustTree(r, L, LL, mq);
+            
+        }
+    }
+    if(p->parent == NULL && LL != NULL)
+    {   
+        NODE root = createNewNode(false);
+        root->children[0] = L;
+        root->children[1] = LL;
+        root->rects[0] = findMBR(L);
+        root->rects[1] = findMBR(LL);
+        root->numChildren = 2;
+        r->root = root;
+        L->parent = root;
+        LL->parent = root;
+    }
+}
+
+void insert(RTREE r, ITEM i)
+{
+    NODE L = createNewNode(true);
+    NODE LL = createNewNode(true);
+
+    NODE n = chooseLeaf(r, i);
+    MBR mx = findMBR(n);
+    split(n, L, LL, i);
+    adjustTree(r, L, LL, mx);
+
+}
+
+
+int main(int argc, char *argv[]) {
     printf("Hello world\n");
 
     int data1[2] = {1, 1};
@@ -651,8 +927,30 @@ int main() {
     NODE N1 = createNewNode(true);
     NODE N2 = createNewNode(true);
     LeafQuadraticSplit(node1, item5, N1, N2);
-    printNode(N1);
-    printNode(N2);
+    // printNode(N1);
+    // printNode(N2);
+
+
+
+    // read data from file
+    FILE *fp;
+    int num1, num2;
+
+    fp = fopen(argv[1], "r");
+
+    if (fp == NULL) {
+        printf("Error opening file.\n");
+        return 1;
+    }
+
+    RTREE rt = createNewRtree();
+    while (fscanf(fp, "%d %d", &num1, &num2) != EOF) {
+        int d[2] = {num1, num2};
+        ITEM newItem = createNewItem(d);
+        insert(rt, newItem);
+    }
+
+    fclose(fp);
 
     return 0;
 }
