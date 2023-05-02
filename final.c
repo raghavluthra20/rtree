@@ -315,7 +315,7 @@ int picknext_child(NODE n1, NODE n2, NODE ni)
 }
 
 // function to choose leaf for inserting a new element in the rtree
-NODE chooseLeaf(RTREE r, ITEM i)
+NODE chooseLeaf(RTREE r, ITEM x)
 {
     NODE n = r->root;
     if (n->isLeaf == true)
@@ -326,7 +326,7 @@ NODE chooseLeaf(RTREE r, ITEM i)
     int item[DIMS];
     for (int d = 0; d < DIMS; d++)
     {
-        item[d] = i->data[d];
+        item[d] = x->data[d];
     }
     int minAreaIndex[M];
     while (n->isLeaf == false)
@@ -372,10 +372,12 @@ NODE chooseLeaf(RTREE r, ITEM i)
             // for (int j = 0; j < DIMS; j++) {
             // area = area * (n->rects[i]->topRight[j] - n->rects[i]->bottomLeft[j]);
             // }
-            long long area = findRectArea(n->rects[i]);
+            int k=minAreaIndex[i];
+            long long area = findRectArea(n->rects[k]);
             if (area < minArea)
             {
-                reqIndex = i;
+                reqIndex = k;
+                minArea = area;
             }
         }
         n = n->children[reqIndex];
@@ -548,6 +550,7 @@ void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
     NODE p = L->parent;
     // int req_ind =0;
     MBR mr = findMBR(L);
+    MBR parent_mbr = findMBR(p);
     if (LL == NULL) // node has not been splitted
     {
         
@@ -559,6 +562,10 @@ void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
                 break;
             }
         }
+        memset(L, 0, sizeof(struct node)); 
+        memset(LL, 0, sizeof(struct node));
+        split(p,L,LL, NULL );
+        adjustTree(r, L , LL, parent_mbr);
     }
     else     // Case for node splitting in L and LL.
     {
@@ -573,24 +580,38 @@ void adjustTree(RTREE r, NODE L, NODE LL, MBR mx)
         }  
         if(p->numChildren < M) // adding mbr for LL node if vacancy is available 
         {
+            MBR par_mbr = findMBR(p);
             p->rects[p->numChildren] = mrb;
             p->numChildren++;
+            adjustTree(r, p, NULL, par_mbr);
         }
         else // adding mbr for LL node if vacancy is NOT available 
         {
             NODE j = createNewNode(true);
             j->rects[0] = mrb;
-            NODE N = createNewNode(true);
-            NODE NN = createNewNode(true);
-             /////// CHECK THIS CONDITION//////////////////////
+            j->children[0] = LL;
+            j->numChildren++;
+            j->parent = p->parent;
+            memset(L, 0, sizeof(struct node)); 
+            memset(LL, 0, sizeof(struct node));
             
             MBR mq = findMBR(p);
-            InternalQuadraticSplit(p, j, N, NN);
-            adjustTree(r, N, NN, mq);//p = p->parent;
+            InternalQuadraticSplit(p, j, L, LL);
+            adjustTree(r, L, LL, mq);
             
         }
-        
-
+    }
+    if(p->parent == NULL && LL != NULL)
+    {   
+        NODE root = createNewNode(false);
+        root->children[0] = L;
+        root->children[1] = LL;
+        root->rects[0] = findMBR(L);
+        root->rects[1] = findMBR(LL);
+        root->numChildren = 2;
+        r->root = root;
+        L->parent = root;
+        LL->parent = root;
     }
 }
 
@@ -619,13 +640,10 @@ void insert(RTREE r, ITEM i)
     NODE LL = createNewNode(true);
 
     NODE n = chooseLeaf(r, i);
-    //while(n->parent!= NULL)
-    //{
-        MBR mx = findMBR(n);
-        split(n, L, LL, i);
-        adjustTree(r, L, LL, mx);
-       // n = n->parent;
-   // }
+    MBR mx = findMBR(n);
+    split(n, L, LL, i);
+    adjustTree(r, L, LL, mx);
+
 }
 
 
