@@ -12,7 +12,7 @@ $ gcc DSA_assignment_group_21.c -o DSA_assignment_group_21
 ```
 To run the executable file
 ```sh
-$ ./DSA_assignment_group_21
+$ ./DSA_assignment_group_21 data.txt
 ```
 
 ## Generic interface
